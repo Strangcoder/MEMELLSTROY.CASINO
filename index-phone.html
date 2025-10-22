@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>Мемо-автомат 🎰 — Mobile Slot</title>
+<style>
+:root{
+  --bg:#0b0b0d;
+  --panel:#0f1113;
+  --accent:#ff6b00;
+}
+
+html, body {
+  margin:0;
+  padding:0;
+  width:100%;
+  height:100%;
+  background: var(--bg);
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  overflow-x:hidden;
+}
+
+/* --- фоновые бегущие буквы --- */
+#bg-text-container{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  overflow:hidden;
+}
+
+.bg-text-row{
+  position:absolute;
+  white-space:nowrap;
+  font-weight:bold;
+  color: rgba(255,255,255,0.03);
+  font-size:12px;
+}
+
+/* --- HEADER --- */
+header{
+  width:100%;
+  height:50px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: linear-gradient(180deg,#ffb87a 0%,var(--accent) 60%);
+  border-bottom: 3px solid #caa25f;
+  overflow:hidden;
+  position:relative;
+  border: 4px solid #caa25f;
+  box-shadow: 0 0 8px #caa25f, 0 0 16px #caa25f, 0 0 24px #caa25f;
+}
+
+.txtHead{
+  white-space:nowrap;
+  font-size:16px;
+  font-weight:bold;
+  color:#fff;
+  text-shadow:0 0 4px #fff,0 0 8px #ffeb7f,0 0 12px #ffb87a;
+  position:absolute;
+}
+
+/* --- ОБЁРТКА --- */
+.wrap{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  width:100%;
+  padding:12px;
+  box-sizing:border-box;
+  margin-top:100px;
+  gap:24px;
+}
+
+/* --- МАШИНА --- */
+.machine{
+  width:90%;
+  max-width:360px;
+  border-radius:16px;
+  background: linear-gradient(180deg,#121217 0%, #1b1d21 60%);
+  padding:16px;
+  position:relative;
+  box-shadow:
+    0 12px 30px rgba(0,0,0,.7),
+    inset 0 -8px 20px rgba(255,255,255,0.02),
+    0 0 25px rgba(220,220,220,0.8),
+    0 0 50px rgba(200,200,200,0.6);
+  animation: neonPulse 2s ease-in-out infinite;
+}
+
+.machine.win{
+  box-shadow:
+    inset 0 4px 12px rgba(255,255,255,0.08),
+    0 0 40px rgba(255,215,0,0.7),
+    0 0 100px rgba(255,180,0,0.5);
+}
+
+/* верхняя панель машины */
+.machine .top{
+  width:100%;
+  height:40px;
+  background: linear-gradient(180deg,#ffb87a 0%,var(--accent) 60%);
+  border:3px solid #caa25f;
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  font-weight:700;
+  font-size:18px;
+  text-shadow:0 0 4px #fff,0 0 8px #ffeb7f,0 0 12px #ffb87a;
+  margin-bottom:10px;
+  box-shadow: 0 0 8px #caa25f, 0 0 16px #caa25f, 0 0 24px #caa25f;
+}
+
+/* --- КАТУШКИ --- */
+.reels{
+  display:flex;
+  justify-content:center;
+  gap:6px;
+  background: radial-gradient(circle at center,#20252b 0%,#0b0c0d 100%);
+  border-radius:14px;
+  padding:12px;
+  overflow:hidden;
+  position:relative;
+}
+
+.reels::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  border:4px solid #caa25f;
+  border-radius:14px;
+  box-shadow:0 0 20px rgba(255,200,120,0.25);
+  pointer-events:none;
+}
+
+.reel{
+  width:80px;
+  height:80px;
+  border-radius:8px;
+  background: radial-gradient(circle at center,#fff 30%,#ddd 100%);
+  overflow:hidden;
+  border:2px solid #1c1e22;
+  position:relative;
+  animation: borderPulse 2s ease-in-out infinite;
+}
+
+.strip{
+  display:flex;
+  flex-direction:column;
+  transform:translateY(0);
+}
+
+.tile{
+  width:80px;
+  height:80px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+  overflow:hidden;
+}
+
+.tile img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+/* --- РЫЧАГ --- */
+.lever{
+  position:absolute;
+  right:-30px;
+  top:20px;
+  width:30px;
+  height:120px;
+  transform-origin:bottom center;
+  cursor:pointer;
+  z-index:10;
+}
+
+.lever .rod{
+  width:8px;
+  height:90px;
+  margin:0 auto;
+  background: linear-gradient(180deg,#999,#555);
+  border-radius:4px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.5);
+}
+
+.lever .ball{
+  width:24px;
+  height:24px;
+  margin-top:-4px;
+  background: radial-gradient(circle at 30% 30%,#ffdc6e,#f0a500);
+  border-radius:50%;
+  box-shadow:0 3px 6px rgba(0,0,0,0.5);
+}
+
+/* --- КНОПКИ --- */
+.controls{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:space-between;
+  width:100%;
+  gap:6px;
+  margin-top:10px;
+  align-items:center;
+}
+
+button#spin{
+  flex:1 1 auto;
+  padding:8px;
+  font-size:14px;
+  border-radius:10px;
+  border:none;
+  background: linear-gradient(180deg,#ff8b3f 0%,#ff5b00 100%);
+  color:#fff;
+  font-weight:700;
+  box-shadow:
+    0 8px 20px rgba(255,107,0,0.16),
+    0 0 8px rgba(255,150,0,0.6),
+    0 0 16px rgba(255,150,0,0.5);
+  cursor:pointer;
+  text-shadow:0 0 2px #fff,0 0 6px #ffd27f,0 0 12px #ff8b3f;
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+button#spin:hover{
+  box-shadow:0 8px 20px rgba(255,107,0,0.16),
+             0 0 12px rgba(255,180,50,0.8),
+             0 0 24px rgba(255,180,50,0.6);
+  transform: scale(1.05);
+}
+button#spin:active{
+  transform: scale(0.95) translateY(2px);
+  box-shadow:0 4px 10px rgba(255,107,0,0.16),
+             0 0 4px rgba(255,150,0,0.4),
+             0 0 8px rgba(255,150,0,0.3);
+}
+
+/* --- МОНЕТКИ --- */
+.coins{
+  padding:6px 10px;
+  border-radius:8px;
+  background:linear-gradient(180deg,#11161b,#0b0f12);
+  font-weight:700;
+  font-size:14px;
+  color:#ffd54a;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:4px;
+}
+
+/* --- ПАНЕЛЬ ИСТОРИИ --- */
+aside.panel{
+  width:90%;
+  max-width:360px;
+  padding:12px;
+  border-radius:12px;
+  background: linear-gradient(180deg,#0f1113,#121316);
+  font-size:12px;
+  color:#fff;
+}
+
+.history{
+  max-height:120px;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column-reverse;
+  gap:2px;
+}
+
+/* --- МОДАЛЬНОЕ ОКНО --- */
+.modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+  background: rgba(0,0,0,0.8);
+}
+
+.modal.active {
+  display: flex;
+}
+
+.modal .card{
+  width:90%;
+  max-width:320px;
+  overflow:hidden;
+  border-radius:12px;
+  background: transparent;
+}
+
+.modal video {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 12px;
+}
+
+.modal .win-burst {
+  position: absolute;
+  left: 50%;
+  top: 25%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  color: #ffd54a;
+  font-weight: 900;
+  display: none;
+  z-index: 2;
+  pointer-events: none;
+  text-shadow: 0 6px 20px rgba(255,150,0,0.25);
+}
+
+.modal .win-burst.show {
+  display: block;
+}
+
+/* --- ВСПЛЫВАЮЩИЕ МОНЕТЫ --- */
+#burst {
+  display: none;
+  position: absolute;
+  left: 50%;
+  top: -20px;
+  transform: translateX(-50%);
+  font-size: 20px;
+  color: #ffd54a;
+  font-weight: 900;
+  z-index: 5;
+  pointer-events: none;
+  text-shadow:0 4px 12px rgba(255,150,0,0.25);
+  transition: all 0.5s ease-out;
+}
+.bet-btn {
+  width:36px;
+  height:36px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:18px;
+  font-weight:bold;
+  color:#fff;
+  background: linear-gradient(180deg,#ff8b3f 0%,#ff5b00 100%);
+  border-radius:8px;
+  border:none;
+  cursor:pointer;
+  box-shadow:
+    0 4px 12px rgba(255,107,0,0.3),
+    0 0 8px rgba(255,180,50,0.5);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.bet-btn:hover {
+  transform: scale(1.1);
+  box-shadow:
+    0 6px 18px rgba(255,107,0,0.4),
+    0 0 12px rgba(255,200,70,0.7);
+  filter: brightness(1.1);
+}
+
+.bet-btn:active {
+  transform: scale(0.95);
+  box-shadow:
+    0 2px 6px rgba(255,107,0,0.3),
+    0 0 4px rgba(255,150,50,0.5);
+  filter: brightness(0.95);
+}
+#burst.show {
+  display: block;
+  top: -50px;
+  opacity: 1;
+}
+
+/* --- АНИМАЦИИ --- */
+@keyframes neonPulse {
+  0%,100%{
+    box-shadow:0 12px 30px rgba(0,0,0,.7),
+               inset 0 -8px 20px rgba(255,255,255,0.02),
+               0 0 20px rgba(220,220,220,0.6),
+               0 0 40px rgba(200,200,200,0.4);
+  }
+  50%{
+    box-shadow:0 12px 30px rgba(0,0,0,.7),
+               inset 0 -8px 20px rgba(255,255,255,0.02),
+               0 0 35px rgba(220,220,220,1),
+               0 0 70px rgba(200,200,200,0.8);
+  }
+}
+
+@keyframes borderPulse {
+  0%,100%{ border-color: rgba(19,21,24,0.6); }
+  50%{ border-color: rgba(21,23,26,0.8); }
+}
+</style>
+</head>
+<body>
+<audio id="bgMusic" src="audio/Goodnightmare.mp3" loop autoplay></audio>
+<audio id="spinSound" src="audio/spin.mp3" preload="auto"></audio>
+<audio id="winSound" src="audio/skolko.mp3" preload="auto"></audio>
+
+<div id="bg-text-container"></div>
+
+<header>
+  <p class="txtHead">MEMELLSTROY.CASINO — BIG MEME WINS!</p>
+</header>
+
+<div class="wrap">
+  <div class="machine" id="machine">
+    <div class="top"><p>MELLSLOT</p></div>
+    <div class="reels">
+      <div class="reel" data-index="0"><div class="strip"></div></div>
+      <div class="reel" data-index="1"><div class="strip"></div></div>
+      <div class="reel" data-index="2"><div class="strip"></div></div>
+    </div>
+    <div class="win-burst" id="burst">+<span id="burst-amount">0</span> 🪙</div>
+
+    <div class="controls">
+      <div class="coins">🪙 <span id="coins">1000</span></div>
+
+      <div style="display:flex; align-items:center; gap:6px; flex:1 1 auto; justify-content:center;">
+        <button id="bet-minus" class="bet-btn">−</button>
+        <input id="bet" value="50" readonly style="width:50px; text-align:center; border-radius:8px; border:1px solid #555; background:#121316; color:#fff; padding:6px;">
+        <button id="bet-plus" class="bet-btn">+</button>
+      </div>
+
+      <button id="spin">SPIN</button>
+    </div>
+  </div>
+
+  <aside class="panel">
+    <h3>История</h3>
+    <div class="history" id="history"></div>
+  </aside>
+</div>
+
+<div class="modal" id="modal">
+  <div class="card">
+    <video id="victoryVideo" controls></video>
+    <div class="win-burst" id="modalBurst">+<span id="modalBurstAmount">0</span> 🪙</div>
+    <div style="text-align:center; margin-top:8px;">
+      <button id="closeVideo" style="padding:8px 16px; border-radius:8px; border:0; background:#222; color:#fff; font-weight:700; cursor:pointer;">
+        Закрыть
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// JS остался без изменений, как у тебя
+const MEME_COUNT = 13;
+const REELS_COUNT = 3;
+const WIN_MULTIPLIER = 5;
+let coins = parseInt(localStorage.getItem('meme_coins')||'1000',10);
+document.getElementById('coins').textContent = coins;
+
+const reels = [...document.querySelectorAll('.reel')];
+const burst = document.getElementById('burst');
+const burstAmount = document.getElementById('burst-amount');
+const spinBtn = document.getElementById('spin');
+const historyEl = document.getElementById('history');
+const victoryVideo = document.getElementById('victoryVideo');
+const modal = document.getElementById('modal');
+const closeVideoBtn = document.getElementById('closeVideo');
+const modalBurst = document.getElementById('modalBurst');
+const modalBurstAmount = document.getElementById('modalBurstAmount');
+const bgMusic = document.getElementById('bgMusic');
+bgMusic.volume = 0.25;
+
+document.body.addEventListener('click',()=>{ bgMusic.play().catch(()=>{}); },{once:true});
+
+function addHistory(text){
+  const row=document.createElement('div');
+  row.className='row';
+  row.textContent=`${new Date().toLocaleTimeString()} — ${text}`;
+  historyEl.prepend(row);
+}
+
+function buildStrip(reel){
+  const strip=reel.querySelector('.strip');
+  strip.innerHTML='';
+  for(let r=0;r<5;r++){
+    for(let i=1;i<=MEME_COUNT;i++){
+      const div=document.createElement('div');
+      div.className='tile';
+      div.innerHTML=`<img src="memes/meme${i}.gif">`;
+      strip.appendChild(div);
+    }
+  }
+}
+reels.forEach(buildStrip);
+
+function randMeme(){return Math.floor(Math.random()*MEME_COUNT)+1;}
+function easeOutQuad(t){return t*(2-t);}
+
+let betInput = document.getElementById('bet');
+let betAmount = parseInt(betInput.value,10);
+
+document.getElementById('bet-plus').addEventListener('click',()=>{
+  betAmount += 10;
+  betInput.value = betAmount;
+});
+
+document.getElementById('bet-minus').addEventListener('click',()=>{
+  if(betAmount > 10) betAmount -= 10;
+  betInput.value = betAmount;
+});
+
+async function spin(){
+  const spinSound=document.getElementById('spinSound');
+  spinSound.currentTime=0;
+  spinSound.play().catch(()=>{});
+
+  const bet = parseInt(betInput.value,10);
+  if(coins<bet){coins+=5000; addHistory('💰 Баланс пополнен +5000 🪙');}
+  coins -= bet;
+  document.getElementById('coins').textContent=coins;
+
+  const LUCK=0.22;
+  const results=[];
+  for(let r=0;r<REELS_COUNT;r++) results.push(randMeme());
+  if(Math.random()<LUCK){ const lucky=randMeme(); for(let i=0;i<results.length;i++) results[i]=lucky;}
+
+  const tileHeight=80;
+  const totalRotations=3;
+  const duration=1200;
+
+  await Promise.all(reels.map((reel,i)=>{
+    return new Promise(res=>{
+      const strip=reel.querySelector('.strip');
+      const target=results[i]-1;
+      const startTime=performance.now();
+      function animate(time){
+        const elapsed=time-startTime;
+        const t=Math.min(elapsed/duration,1);
+        const eased=easeOutQuad(t);
+        const pos=(totalRotations*MEME_COUNT+target)*tileHeight*eased;
+        strip.style.transform=`translateY(-${pos}px)`;
+        if(t<1) requestAnimationFrame(animate); else { strip.style.transform=`translateY(-${target*tileHeight}px)`; res(); }
+      }
+      requestAnimationFrame(animate);
+    });
+  }));
+
+  const win=results.every(v=>v===results[0]);
+  if(win){
+    const winSound=document.getElementById('winSound');
+    winSound.currentTime=0; winSound.play().catch(()=>{});
+    const reward=bet*WIN_MULTIPLIER; 
+    coins+=reward;
+    document.getElementById('coins').textContent=coins;
+
+    burstAmount.textContent=reward;
+    burst.classList.add('show');
+    setTimeout(()=>{ burst.classList.remove('show'); }, 1500);
+
+    addHistory(`🎉 Победа! Все катушки показали meme${results[0]}! +${reward} 🪙`);
+    playWinVideo(results[0],reward);
+  } else {
+    addHistory(`Комбинация: ${results.join('|')} — не повезло.`);
+  }
+}
+
+function playWinVideo(index,reward){
+  victoryVideo.src=`memes/meme${index}.mp4`;
+  modal.classList.add('active');
+  modalBurstAmount.textContent=reward;
+  modalBurst.classList.add('show');
+  victoryVideo.play().catch(()=>{});
+  victoryVideo.onended=()=>{ modal.classList.remove('active'); modalBurst.classList.remove('show'); victoryVideo.pause(); victoryVideo.currentTime=0; }
+}
+
+spinBtn.addEventListener('click',spin);
+closeVideoBtn.addEventListener('click',()=>{ modal.classList.remove('active'); modalBurst.classList.remove('show'); victoryVideo.pause(); victoryVideo.currentTime=0; });
+
+const container=document.getElementById('bg-text-container');
+const rowHeight=14;
+const fontSize=12;
+const rows=Math.floor(window.innerHeight/rowHeight);
+const word='MELLSTROY ';
+
+for(let i=0;i<rows;i++){
+  const row=document.createElement('div');
+  row.className='bg-text-row';
+  row.style.top=`${i*rowHeight}px`;
+  row.style.fontSize=fontSize+'px';
+  const count=Math.ceil(window.innerWidth/60);
+  row.textContent=word.repeat(count).trim();
+  row.dataset.offset=0;
+  row.dataset.direction=(i%2===0?1:-1);
+  row.dataset.step=0.1+Math.random()*0.05;
+  container.appendChild(row);
+}
+
+function animateRows(){
+  document.querySelectorAll('.bg-text-row').forEach(row=>{
+    let offset=parseFloat(row.dataset.offset);
+    const dir=parseFloat(row.dataset.direction);
+    const step=parseFloat(row.dataset.step);
+    if(offset>5) row.dataset.direction=-1;
+    if(offset<-5) row.dataset.direction=1;
+    offset+=dir*step;
+    row.style.transform=`translateX(${offset}px)`;
+    row.dataset.offset=offset;
+  });
+  requestAnimationFrame(animateRows);
+}
+
+animateRows();
+</script>
+</body>
+</html>
