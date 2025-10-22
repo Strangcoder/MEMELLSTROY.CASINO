@@ -577,7 +577,7 @@ function playWinVideo(index,reward){
   modalBurstAmount.textContent=reward;
   modalBurst.classList.add('show');
   victoryVideo.play().catch(()=>{});
-  victoryVideo.onended=()=>{ modal.classList.remove('active'); modalBurst.classList.remove('show'); victoryVideo.pause(); victoryVideo.currentTime=0; }
+  victoryVideo.onended=()=>{ modal.classList.remove('active'); modalBurst.classList.remove('show'); victoryVideo.pause(); victoryVideo.currentTime=0; bgMusic.play().catch(()=>{});}
 }
 
 spinBtn.addEventListener('click',spin);
@@ -620,3 +620,4 @@ animateRows();
 </script>
 </body>
 </html>
+
